@@ -14,6 +14,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
+import Logo from '../components/Logo';
 
 // TMDB API constants
 const API_KEY = '297f1b91919bae59d50ed815f8d2e14c';
@@ -209,7 +210,7 @@ const HomeScreen = () => {
     <SafeAreaView style={styles.container} edges={['top']}>
       <StatusBar barStyle="light-content" />
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Let's Stream</Text>
+        <Logo />
         <View style={styles.headerRight}>
           <TouchableOpacity 
             style={styles.headerButton}
@@ -266,13 +267,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 16,
     paddingVertical: 12,
-  },
-  headerTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#E50914',
+    paddingRight: 16,
   },
   headerRight: {
     flexDirection: 'row',
