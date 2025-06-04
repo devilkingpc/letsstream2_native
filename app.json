@@ -1,0 +1,27 @@
+{
+  "expo": {
+    "name": "lets_stream",
+    "slug": "lets_stream",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.letsstream.app"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#000000"
+      },
+      "package": "com.letsstream.app"
+    },
+    "plugins": [
+      "expo-dev-client"
+    ]
+  }
+}
