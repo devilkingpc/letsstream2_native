@@ -1,7 +1,7 @@
 {
-  "name": "a0-project",
+  "name": "lets-stream",
   "version": "1.0.0",
-  "license": "0BSD",
+  "license": "GPL-3.0",
   "private": true,
   "main": "index.ts",
   "scripts": {

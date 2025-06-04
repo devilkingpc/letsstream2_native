@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "lets_stream",
+    "name": "Let's Stream",
     "slug": "lets_stream",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -11,14 +11,18 @@
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.letsstream.app"
+      "bundleIdentifier": "com.letsstream.app",
+      "buildNumber": "1",
+      "displayName": "Let's Stream"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#000000"
       },
-      "package": "com.letsstream.app"
+      "package": "com.letsstream.app",
+      "versionCode": 1,
+      "displayName": "Let's Stream"
     },
     "plugins": [
       "expo-dev-client"
