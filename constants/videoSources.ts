@@ -1,5 +1,5 @@
 export interface VideoSource {
-  key: string;
+  key: string; // to match navigation type
   name: string;
   movieUrlPattern: string;
   tvUrlPattern: string;
