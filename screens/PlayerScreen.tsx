@@ -10,7 +10,8 @@ import {
   Modal,
   FlatList,
   Alert,
-  BackHandler
+  BackHandler,
+  Platform
 } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { WebView } from 'react-native-webview';
@@ -38,6 +39,20 @@ type RouteParams = {
   sources: VideoSource[];
 };
 
+const POPUP_BLOCKER_SCRIPT = `
+(function() {
+  window.open = function() { return null; };
+  setInterval(() => {
+    const frames = document.getElementsByTagName('iframe');
+    for(let i = 0; i < frames.length; i++) {
+      try {
+        frames[i].contentWindow.open = function() { return null; };
+      } catch(e) {}
+    }
+  }, 100);
+})();
+`;
+
 const PlayerScreen = () => {
   const navigation = useNavigation();
   const route = useRoute();
@@ -59,6 +74,8 @@ const PlayerScreen = () => {
   const [currentSourceIndex, setCurrentSourceIndex] = useState<number>(0);
   const [currentSeason, setCurrentSeason] = useState<number>(season);
   const [currentEpisode, setCurrentEpisode] = useState<number>(episode);
+  const [controlsOpacity, setControlsOpacity] = useState<number>(1);
+  let controlsTimer: NodeJS.Timeout | null = null;
   const webViewRef = useRef<WebView>(null);
 
   // Handle Android back button
@@ -102,6 +119,30 @@ const PlayerScreen = () => {
         setShowControls(false);
       }, 5000);
     }
+  };
+
+  const startControlsTimer = () => {
+    if (controlsTimer) {
+      clearTimeout(controlsTimer);
+    }
+    setControlsOpacity(1);
+    controlsTimer = setTimeout(() => {
+      setControlsOpacity(0.3);
+    }, 5000);
+  };
+
+  // Cleanup timer on unmount
+  React.useEffect(() => {
+    startControlsTimer();
+    return () => {
+      if (controlsTimer) {
+        clearTimeout(controlsTimer);
+      }
+    };
+  }, []);
+
+  const handleControlPress = () => {
+    startControlsTimer();
   };
 
   const buildUrl = (sourceItem: VideoSource, s: number, e: number) => {
@@ -176,6 +217,23 @@ const PlayerScreen = () => {
     }
   };
 
+  const handleNavigationStateChange = (navState: any) => {
+    // Keep track of URL changes but don't allow external navigation
+    if (navState.url !== currentSourceUrl) {
+      webViewRef.current?.stopLoading();
+      return false;
+    }
+    return true;
+  };
+
+  const handleShouldStartLoadWithRequest = (event: any) => {
+    // Block any navigation attempts to external URLs
+    if (event.url !== currentSourceUrl) {
+      return false;
+    }
+    return true;
+  };
+
   const renderSourceItem = ({ item, index }: { item: VideoSource, index: number }) => {
     const isSelected = index === currentSourceIndex;
     
@@ -239,65 +297,67 @@ const PlayerScreen = () => {
           javaScriptEnabled={true}
           domStorageEnabled={true}
           allowsFullscreenVideo={true}
-          injectedJavaScript={INJECTED_JAVASCRIPT}
+          mediaPlaybackRequiresUserAction={false}
+          allowsInlineMediaPlayback={true}
+          mixedContentMode="compatibility"
+          scalesPageToFit={true}
+          bounces={false}
+          startInLoadingState={true}
+          originWhitelist={['*']}
+          injectedJavaScript={`${POPUP_BLOCKER_SCRIPT}${INJECTED_JAVASCRIPT || ''}`}
+          onNavigationStateChange={handleNavigationStateChange}
+          onShouldStartLoadWithRequest={handleShouldStartLoadWithRequest}
+          setSupportMultipleWindows={false}
         />
         
-        <TouchableOpacity
-          style={styles.overlayTouchable}
-          activeOpacity={1}
-          onPress={toggleControls}
-        >
-          {isLoading && (
-            <View style={styles.loadingOverlay}>
-              <ActivityIndicator size="large" color="#E50914" />
-            </View>
-          )}
-          
-          {showControls && (
-            <View style={styles.controlsOverlay}>
-              <View style={styles.topControls}>
-                <TouchableOpacity
-                  style={styles.backButton}
-                  onPress={() => navigation.goBack()}
+        {isLoading && (
+          <View style={styles.loadingOverlay}>
+            <ActivityIndicator size="large" color="#E50914" />
+          </View>
+        )}
+
+        {/* Corner Controls */}
+        <View style={[styles.cornerControls, { opacity: controlsOpacity }]}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}
+            onPressIn={handleControlPress}
+          >
+            <Ionicons name="arrow-back" size={24} color="#fff" />
+          </TouchableOpacity>
+
+          <View style={styles.rightControls}>
+            {type === 'tv' && (
+              <View style={styles.episodeControls}>
+                <TouchableOpacity 
+                  style={styles.episodeNavButton} 
+                  onPress={goToPrevEpisode}
+                  onPressIn={handleControlPress}
                 >
-                  <Ionicons name="arrow-back" size={24} color="#fff" />
+                  <Ionicons name="play-skip-back" size={24} color="#fff" />
                 </TouchableOpacity>
-                <Text style={styles.titleText}>
-                  {type === 'movie' ? title : `${title} - S${currentSeason}:E${currentEpisode}`}
-                </Text>
-              </View>
-              
-              <View style={styles.centerControls}>
-                {/* Empty for now, could add play/pause controls if needed */}
-              </View>
-              
-              <View style={styles.bottomControls}>
-                {/* Prev / Next episode controls for TV */}
-                {type === 'tv' && (
-                  <TouchableOpacity style={styles.episodeNavButton} onPress={goToPrevEpisode}>
-                    <Ionicons name="play-skip-back" size={24} color="#fff" />
-                  </TouchableOpacity>
-                )}
-                
-                <TouchableOpacity
-                  style={styles.sourceButton}
-                  onPress={() => setShowSourcesModal(true)}
+                <TouchableOpacity 
+                  style={styles.episodeNavButton} 
+                  onPress={goToNextEpisode}
+                  onPressIn={handleControlPress}
                 >
-                  <Ionicons name="swap-horizontal" size={20} color="#fff" />
-                  <Text style={styles.sourceButtonText}>
-                    Source: {sources[currentSourceIndex]?.name || "Unknown"}
-                  </Text>
+                  <Ionicons name="play-skip-forward" size={24} color="#fff" />
                 </TouchableOpacity>
-                
-                {type === 'tv' && (
-                  <TouchableOpacity style={styles.episodeNavButton} onPress={goToNextEpisode}>
-                    <Ionicons name="play-skip-forward" size={24} color="#fff" />
-                  </TouchableOpacity>
-                )}
               </View>
-            </View>
-          )}
-        </TouchableOpacity>
+            )}
+            
+            <TouchableOpacity
+              style={styles.sourceButton}
+              onPress={() => setShowSourcesModal(true)}
+              onPressIn={handleControlPress}
+            >
+              <Ionicons name="swap-horizontal" size={20} color="#fff" />
+              <Text style={styles.sourceButtonText} numberOfLines={1}>
+                {sources[currentSourceIndex]?.name || "Unknown"}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
       </View>
       
       {renderSourcesModal()}
@@ -358,7 +418,8 @@ const styles = StyleSheet.create({
     height: 40,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 8,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    borderRadius: 20,
   },
   titleText: {
     color: '#fff',
@@ -378,8 +439,13 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   episodeNavButton: {
-    paddingHorizontal: 10,
-    paddingVertical: 6,
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    borderRadius: 20,
+    marginLeft: 8,
   },
   sourceButton: {
     flexDirection: 'row',
@@ -387,7 +453,8 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.7)',
     paddingHorizontal: 12,
     paddingVertical: 8,
-    borderRadius: 4,
+    borderRadius: 20,
+    maxWidth: 200,
   },
   sourceButtonText: {
     color: '#fff',
@@ -453,9 +520,56 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
   },
+  cornerControls: {
+    position: 'absolute',
+    top: 16,
+    left: 16,
+    right: 16,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    pointerEvents: 'box-none',
+  },
+  rightControls: {
+    alignItems: 'flex-end',
+  },
+  episodeControls: {
+    flexDirection: 'row',
+    marginBottom: 8,
+  },
 });
 
-// A harmless script so injectedJavaScript prop is always defined
-const INJECTED_JAVASCRIPT = 'true;';
+// Script to improve iframe interaction and ensure proper video playback
+const INJECTED_JAVASCRIPT = `
+  (function() {
+    // Allow inline playback
+    document.body.style.position = 'relative';
+    document.body.style.width = '100vw';
+    document.body.style.height = '100vh';
+    document.body.style.margin = '0';
+    document.body.style.padding = '0';
+    
+    // Find all iframes and make them fullscreen
+    const iframes = document.getElementsByTagName('iframe');
+    for (let i = 0; i < iframes.length; i++) {
+      const iframe = iframes[i];
+      iframe.style.width = '100%';
+      iframe.style.height = '100%';
+      iframe.style.border = 'none';
+      iframe.style.position = 'absolute';
+      iframe.style.top = '0';
+      iframe.style.left = '0';
+      
+      // Add allow attributes for better compatibility
+      iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen';
+      iframe.allowFullscreen = true;
+    }
+    
+    // Prevent scrolling of the main document
+    document.body.style.overflow = 'hidden';
+    
+    true;
+  })();
+`;
 
 export default PlayerScreen;
