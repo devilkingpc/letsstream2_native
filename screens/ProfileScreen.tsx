@@ -1,23 +1,14 @@
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  Switch,
-  ScrollView,
-  Alert,
-  Image,
-  Platform,
-  StatusBar,
-  TextInput,
-  Modal,
-  ActivityIndicator
-} from 'react-native';
+import { View, Alert, ScrollView, StatusBar, StyleSheet, ActivityIndicator } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
-import Logo from '../components/Logo';
+import ProfileHeader from '../components/profile/ProfileHeader';
+import ProfileInfo from '../components/profile/ProfileInfo';
+import ProfileSection from '../components/profile/ProfileSection';
+import MenuItem from '../components/profile/MenuItem';
+import LoginModal from '../components/profile/LoginModal';
+import SettingsModal from '../components/profile/SettingsModal';
 
 const ProfileScreen = () => {
   const navigation = useNavigation();
@@ -155,228 +146,117 @@ const ProfileScreen = () => {
     Alert.alert("Watchlist", "Watchlist feature coming soon!");
   };
 
-  const renderLoginModal = () => (
-    <Modal
-      animationType="slide"
-      transparent={true}
-      visible={showLoginModal}
-      onRequestClose={() => setShowLoginModal(false)}
-    >
-      <View style={styles.modalOverlay}>
-        <View style={styles.modalContent}>
-          <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>Sign In</Text>
-            <TouchableOpacity 
-              onPress={() => setShowLoginModal(false)}
-              style={styles.closeButton}
-            >
-              <Ionicons name="close" size={24} color="#fff" />
-            </TouchableOpacity>
-          </View>
-          <TextInput
-            style={styles.input}
-            placeholder="Email"
-            placeholderTextColor="#999"
-            value={email}
-            onChangeText={setEmail}
-            autoCapitalize="none"
-            keyboardType="email-address"
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="Password"
-            placeholderTextColor="#999"
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
-          />
-          <TouchableOpacity 
-            style={styles.loginButton}
-            onPress={handleLogin}
-            disabled={isLoading}
-          >
-            {isLoading ? (
-              <ActivityIndicator color="#fff" />
-            ) : (
-              <Text style={styles.loginButtonText}>Sign In</Text>
-            )}
-          </TouchableOpacity>
-        </View>
-      </View>
-    </Modal>
-  );
 
-  const renderSettingsModal = () => (
-    <Modal
-      animationType="slide"
-      transparent={true}
-      visible={showSettings}
-      onRequestClose={() => setShowSettings(false)}
-    >
-      <View style={styles.modalOverlay}>
-        <View style={styles.modalContent}>
-          <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>Playback Settings</Text>
-            <TouchableOpacity 
-              onPress={() => setShowSettings(false)}
-              style={styles.closeButton}
-            >
-              <Ionicons name="close" size={24} color="#fff" />
-            </TouchableOpacity>
-          </View>
-          
-          <View style={styles.settingItem}>
-            <Text style={styles.settingLabel}>Video Quality</Text>
-            <View style={styles.qualityOptions}>
-              {['Auto', 'High', 'Medium', 'Low'].map(quality => (
-                <TouchableOpacity
-                  key={quality}
-                  style={[
-                    styles.qualityOption,
-                    selectedQuality === quality && styles.qualityOptionSelected
-                  ]}
-                  onPress={() => setSelectedQuality(quality)}
-                >
-                  <Text style={[
-                    styles.qualityOptionText,
-                    selectedQuality === quality && styles.qualityOptionTextSelected
-                  ]}>
-                    {quality}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
-
-          <View style={styles.settingItem}>
-            <View style={styles.settingRow}>
-              <Text style={styles.settingLabel}>Autoplay Next Episode</Text>
-              <Switch
-                value={autoplay}
-                onValueChange={setAutoplay}
-                trackColor={{ false: '#767577', true: '#E50914' }}
-                thumbColor={autoplay ? '#fff' : '#f4f3f4'}
-              />
-            </View>
-          </View>
-
-          <View style={styles.settingItem}>
-            <View style={styles.settingRow}>
-              <Text style={styles.settingLabel}>Download on Wi-Fi Only</Text>
-              <Switch
-                value={downloadWifiOnly}
-                onValueChange={setDownloadWifiOnly}
-                trackColor={{ false: '#767577', true: '#E50914' }}
-                thumbColor={downloadWifiOnly ? '#fff' : '#f4f3f4'}
-              />
-            </View>
-          </View>
-        </View>
-      </View>
-    </Modal>
-  );
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <StatusBar barStyle="light-content" />
-      <View style={styles.header}>
-        <Logo />
-      </View>
-
+      <ProfileHeader />
       <ScrollView style={styles.scrollView}>
-        <View style={styles.profileSection}>
-          <Image
-            source={{ uri: userData.avatarUrl }}
-            style={styles.avatar}
-          />
-          <View style={styles.profileInfo}>
-            <Text style={styles.userName}>{userData.name}</Text>
-            <Text style={styles.userEmail}>{userData.email}</Text>
-            {isLoggedIn && (
-              <Text style={styles.memberSince}>Member since {userData.memberSince}</Text>
-            )}
-          </View>
-        </View>
-
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Account</Text>
+        <ProfileInfo
+          avatarUrl={userData.avatarUrl}
+          name={userData.name}
+          email={userData.email}
+          memberSince={userData.memberSince}
+          isLoggedIn={isLoggedIn}
+        />
+        <ProfileSection title="Account">
           {!isLoggedIn ? (
-            <TouchableOpacity
-              style={styles.menuItem}
+            <MenuItem
+              icon={<Ionicons name="log-in-outline" size={24} color="#fff" />}
+              text="Sign In"
               onPress={() => setShowLoginModal(true)}
-            >
-              <Ionicons name="log-in-outline" size={24} color="#fff" />
-              <Text style={styles.menuItemText}>Sign In</Text>
-              <Ionicons name="chevron-forward" size={24} color="#666" />
-            </TouchableOpacity>
+              rightIcon={<Ionicons name="chevron-forward" size={24} color="#666" />}
+            />
           ) : (
             <>
-              <TouchableOpacity style={styles.menuItem} onPress={handleWatchlist}>
-                <Ionicons name="bookmark-outline" size={24} color="#fff" />
-                <Text style={styles.menuItemText}>My Watchlist</Text>
-                <Ionicons name="chevron-forward" size={24} color="#666" />
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.menuItem} onPress={handleDownloads}>
-                <Ionicons name="download-outline" size={24} color="#fff" />
-                <Text style={styles.menuItemText}>Downloads</Text>
-                <Ionicons name="chevron-forward" size={24} color="#666" />
-              </TouchableOpacity>
+              <MenuItem
+                icon={<Ionicons name="bookmark-outline" size={24} color="#fff" />}
+                text="My Watchlist"
+                onPress={handleWatchlist}
+                rightIcon={<Ionicons name="chevron-forward" size={24} color="#666" />}
+              />
+              <MenuItem
+                icon={<Ionicons name="download-outline" size={24} color="#fff" />}
+                text="Downloads"
+                onPress={handleDownloads}
+                rightIcon={<Ionicons name="chevron-forward" size={24} color="#666" />}
+              />
             </>
           )}
-        </View>
-
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Preferences</Text>
-          <TouchableOpacity style={styles.menuItem} onPress={() => setShowSettings(true)}>
-            <Ionicons name="settings-outline" size={24} color="#fff" />
-            <Text style={styles.menuItemText}>Playback Settings</Text>
-            <Ionicons name="chevron-forward" size={24} color="#666" />
-          </TouchableOpacity>
-          <View style={styles.menuItem}>
-            <Ionicons name={darkMode ? "moon" : "sunny"} size={24} color="#fff" />
-            <Text style={styles.menuItemText}>Dark Mode</Text>
-            <Switch
-              value={darkMode}
-              onValueChange={toggleDarkMode}
-              trackColor={{ false: '#767577', true: '#E50914' }}
-              thumbColor={darkMode ? '#fff' : '#f4f3f4'}
-            />
-          </View>
-          <View style={styles.menuItem}>
-            <Ionicons name={notifications ? "notifications" : "notifications-off"} size={24} color="#fff" />
-            <Text style={styles.menuItemText}>Notifications</Text>
-            <Switch
-              value={notifications}
-              onValueChange={toggleNotifications}
-              trackColor={{ false: '#767577', true: '#E50914' }}
-              thumbColor={notifications ? '#fff' : '#f4f3f4'}
-            />
-          </View>
-        </View>
-
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>App</Text>
-          <TouchableOpacity style={styles.menuItem} onPress={handleClearCache}>
-            <MaterialIcons name="cleaning-services" size={24} color="#fff" />
-            <Text style={styles.menuItemText}>Clear Cache</Text>
-            <Ionicons name="chevron-forward" size={24} color="#666" />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.menuItem} onPress={handleAbout}>
-            <Ionicons name="information-circle-outline" size={24} color="#fff" />
-            <Text style={styles.menuItemText}>About</Text>
-            <Ionicons name="chevron-forward" size={24} color="#666" />
-          </TouchableOpacity>
+        </ProfileSection>
+        <ProfileSection title="Preferences">
+          <MenuItem
+            icon={<Ionicons name="settings-outline" size={24} color="#fff" />}
+            text="Playback Settings"
+            onPress={() => setShowSettings(true)}
+            rightIcon={<Ionicons name="chevron-forward" size={24} color="#666" />}
+          />
+          <MenuItem
+            icon={<Ionicons name={darkMode ? 'moon' : 'sunny'} size={24} color="#fff" />}
+            text="Dark Mode"
+            switchProps={{
+              value: darkMode,
+              onValueChange: toggleDarkMode,
+              trackColor: { false: '#767577', true: '#E50914' },
+              thumbColor: darkMode ? '#fff' : '#f4f3f4',
+            }}
+          />
+          <MenuItem
+            icon={<Ionicons name={notifications ? 'notifications' : 'notifications-off'} size={24} color="#fff" />}
+            text="Notifications"
+            switchProps={{
+              value: notifications,
+              onValueChange: toggleNotifications,
+              trackColor: { false: '#767577', true: '#E50914' },
+              thumbColor: notifications ? '#fff' : '#f4f3f4',
+            }}
+          />
+        </ProfileSection>
+        <ProfileSection title="App">
+          <MenuItem
+            icon={<MaterialIcons name="cleaning-services" size={24} color="#fff" />}
+            text="Clear Cache"
+            onPress={handleClearCache}
+            rightIcon={<Ionicons name="chevron-forward" size={24} color="#666" />}
+          />
+          <MenuItem
+            icon={<Ionicons name="information-circle-outline" size={24} color="#fff" />}
+            text="About"
+            onPress={handleAbout}
+            rightIcon={<Ionicons name="chevron-forward" size={24} color="#666" />}
+          />
           {isLoggedIn && (
-            <TouchableOpacity style={[styles.menuItem, styles.logoutItem]} onPress={handleLogout}>
-              <Ionicons name="log-out-outline" size={24} color="#E50914" />
-              <Text style={[styles.menuItemText, styles.logoutText]}>Sign Out</Text>
-            </TouchableOpacity>
+            <MenuItem
+              icon={<Ionicons name="log-out-outline" size={24} color="#E50914" />}
+              text="Sign Out"
+              onPress={handleLogout}
+              textStyle={styles.logoutText}
+              style={styles.logoutItem}
+            />
           )}
-        </View>
+        </ProfileSection>
       </ScrollView>
-
-      {renderLoginModal()}
-      {renderSettingsModal()}
+      <LoginModal
+        visible={showLoginModal}
+        onClose={() => setShowLoginModal(false)}
+        email={email}
+        password={password}
+        onEmailChange={setEmail}
+        onPasswordChange={setPassword}
+        onLogin={handleLogin}
+        isLoading={isLoading}
+      />
+      <SettingsModal
+        visible={showSettings}
+        onClose={() => setShowSettings(false)}
+        selectedQuality={selectedQuality}
+        setSelectedQuality={setSelectedQuality}
+        autoplay={autoplay}
+        setAutoplay={setAutoplay}
+        downloadWifiOnly={downloadWifiOnly}
+        setDownloadWifiOnly={setDownloadWifiOnly}
+      />
       {isLoading && (
         <View style={styles.loadingOverlay}>
           <ActivityIndicator size="large" color="#E50914" />
