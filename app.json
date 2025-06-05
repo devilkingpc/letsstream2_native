@@ -13,7 +13,10 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.letsstream.app",
       "buildNumber": "1",
-      "displayName": "Let's Stream"
+      "displayName": "Let's Stream",
+      "runtimeVersion": {
+        "policy": "appVersion"
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -22,10 +25,19 @@
       },
       "package": "com.letsstream.app",
       "versionCode": 1,
-      "displayName": "Let's Stream"
+      "displayName": "Let's Stream",
+      "runtimeVersion": "1.0.0"
     },
     "plugins": [
       "expo-dev-client"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "7ea4b217-5620-4bd9-9cc0-737ce7040d06"
+      }
+    },
+    "updates": {
+      "url": "https://u.expo.dev/7ea4b217-5620-4bd9-9cc0-737ce7040d06"
+    }
   }
 }
