@@ -42,6 +42,13 @@ jobs:
           npm ci
           npx expo install
 
+      - name: Ensure expo-modules-autolinking is installed
+        run: npm install expo-modules-autolinking --save-dev
+      - name: Debug: Check for expo-gradle-plugin
+        run: |
+          ls -l node_modules/expo-modules-autolinking/android/ || echo "Directory not found"
+          ls -l node_modules/expo-modules-autolinking/android/expo-gradle-plugin || echo "expo-gradle-plugin not found!"
+
       - name: Build Android Release
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
