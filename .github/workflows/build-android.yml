@@ -13,12 +13,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4  # Updated to v4
 
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: 18
+          cache: 'npm'  # Add npm caching
 
       - name: Setup Java
         uses: actions/setup-java@v3
@@ -33,7 +34,7 @@ jobs:
             ~/.npm
             ~/.gradle/caches
             ~/.gradle/wrapper
-          key: ${{ runner.os }}-node-gradle-${{ hashFiles('**/package-lock.json') }}-${{ hashFiles('**/*.gradle*') }}
+          key: ${{ runner.os }}-node-gradle-${{ hashFiles('**/package-lock.json', '**/*.gradle*', '**/gradle-wrapper.properties') }}
           restore-keys: |
             ${{ runner.os }}-node-gradle-
 
@@ -42,37 +43,31 @@ jobs:
           npm ci
           npx expo install
 
-      - name: Ensure expo-modules-autolinking is installed
-        run: npm install expo-modules-autolinking --save-dev
-      - name: Debug: Check for expo-gradle-plugin
-        run: |
-          ls -l node_modules/expo-modules-autolinking/android/ || echo "Directory not found"
-          ls -l node_modules/expo-modules-autolinking/android/expo-gradle-plugin || echo "expo-gradle-plugin not found!"
+      # Removed separate expo-modules-autolinking install (should be in package.json)
 
       - name: Build Android Release
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
         run: |
-          chmod +x android/gradlew
-          ./android/gradlew -p android assembleRelease
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleRelease
+          cd ..
+
+      - name: Find APK file
+        id: find-apk
+        run: |
+          APK_PATH=$(find android/app/build/outputs/apk -name '*.apk' | head -1)
+          echo "apk_path=$APK_PATH" >> $GITHUB_OUTPUT
+          echo "Found APK: $APK_PATH"
 
       - name: Create Release
-        uses: actions/create-release@v1
-        id: create_release
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: softprops/action-gh-release@v1  # More reliable action
         with:
           tag_name: v${{ github.event.inputs.version }}
-          release_name: Release v${{ github.event.inputs.version }}
+          name: Release v${{ github.event.inputs.version }}
+          body: "Android release build"
           draft: false
           prerelease: false
-
-      - name: Upload Release Asset
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: android/app/build/outputs/apk/release/app-release.apk
-          asset_name: letsstream-v${{ github.event.inputs.version }}.apk
-          asset_content_type: application/vnd.android.package-archive
+          files: ${{ steps.find-apk.outputs.apk_path }}
+          token: ${{ secrets.GITHUB_TOKEN }}
