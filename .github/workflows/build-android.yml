@@ -46,9 +46,8 @@ jobs:
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
         run: |
-          cd android
-          chmod +x gradlew
-          ./gradlew assembleRelease
+          chmod +x android/gradlew
+          ./android/gradlew -p android assembleRelease
 
       - name: Create Release
         uses: actions/create-release@v1
