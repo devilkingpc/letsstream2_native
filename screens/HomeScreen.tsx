@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, StyleSheet, ActivityIndicator, ScrollView, StatusBar } from 'react-native';
+import { View, ActivityIndicator, ScrollView, StatusBar, FlatList, TouchableOpacity, Text } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, NavigationProp } from '@react-navigation/native';
 import { RootStackParamList } from '../types/navigation';
@@ -9,11 +9,13 @@ import { contentCategories } from '../components/screens/home/types';
 import HomeHeader from '../components/screens/home/HomeHeader';
 import FeaturedContent from '../components/screens/home/FeaturedContent';
 import ContentSection from '../components/screens/home/ContentSection';
+import Logo from '../components/Logo';
+import homeScreenStyles from './homeScreenStyles';
 
 const HomeScreen = () => {
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
   const [isLoading, setIsLoading] = useState(true);
-  const [featuredContent, setFeaturedContent] = useState<Movie | TvShow | null>(null);
+  const [featuredList, setFeaturedList] = useState<(Movie | TvShow)[]>([]);
   const [categories, setCategories] = useState<{ [key: string]: (Movie | TvShow)[] }>({});
 
   useEffect(() => {
@@ -22,14 +24,13 @@ const HomeScreen = () => {
 
   const fetchInitialContent = async () => {
     try {
-      // Fetch trending content for the hero section
+      // Fetch trending content for the featured carousel
       const trendingResponse = await fetch(
         `${BASE_URL}/trending/all/day?api_key=${API_KEY}`
       );
       const trendingData = await trendingResponse.json();
-      
       if (trendingData.results && trendingData.results.length > 0) {
-        setFeaturedContent(trendingData.results[0]);
+        setFeaturedList(trendingData.results.slice(0, 10)); // Show top 10 in carousel
       }
       
       // Fetch all category content in parallel
@@ -71,62 +72,107 @@ const HomeScreen = () => {
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={homeScreenStyles.container} edges={['top']}>
       <StatusBar barStyle="light-content" />
-      <HomeHeader
-        onSearchPress={() => navigation.navigate('Search' as never)}
-        onProfilePress={() => navigation.navigate('Profile' as never)}
-      />
-      
-      <ScrollView 
-        style={styles.scrollView}
-        showsVerticalScrollIndicator={false}
-      >
-        {featuredContent && (
-          <FeaturedContent
-            content={featuredContent}
-            onPlayPress={() => handleContentPress(
-              featuredContent, 
-              'title' in featuredContent ? 'movie' : 'tv'
-            )}
-            onInfoPress={() => handleContentPress(
-              featuredContent,
-              'title' in featuredContent ? 'movie' : 'tv'
-            )}
-          />
+      {/* Header Row: Logo, Search, Profile */}
+      <View style={homeScreenStyles.headerRow}>
+        <Logo style={homeScreenStyles.logo} />
+        <View style={homeScreenStyles.headerActions}>
+          <TouchableOpacity onPress={() => navigation.navigate('Search' as never)} style={homeScreenStyles.headerIcon}>
+            <Text style={homeScreenStyles.headerIconText}>🔍</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => navigation.navigate('Profile' as never)} style={homeScreenStyles.headerIcon}>
+            <Text style={homeScreenStyles.headerIconText}>👤</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      <ScrollView style={homeScreenStyles.scrollView} showsVerticalScrollIndicator={false}>
+        {/* Featured Carousel */}
+        {featuredList.length > 0 && (
+          <View style={homeScreenStyles.featuredCarouselContainer}>
+            <FlatList
+              data={featuredList}
+              keyExtractor={item => String(item.id)}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ paddingHorizontal: 8 }}
+              renderItem={({ item }) => (
+                <View style={homeScreenStyles.featuredCard}>
+                  <FeaturedContent
+                    content={item}
+                    onPlayPress={() => handleContentPress(
+                      item,
+                      'title' in item ? 'movie' : 'tv'
+                    )}
+                    onInfoPress={() => handleContentPress(
+                      item,
+                      'title' in item ? 'movie' : 'tv'
+                    )}
+                  />
+                </View>
+              )}
+            />
+          </View>
         )}
 
+        {/* Category Sections */}
         {contentCategories.map((category) => {
           const categoryData = categories[category.title] || [];
           return categoryData.length > 0 ? (
-            <ContentSection
-              key={category.title}
-              title={category.title}
-              data={categoryData}
-              contentType={category.type}
-              onItemPress={handleContentPress}
-            />
+            <View key={category.title} style={homeScreenStyles.categorySection}>
+              <View style={homeScreenStyles.categoryHeader}>
+                <Text style={homeScreenStyles.categoryTitle}>{category.title}</Text>
+                <TouchableOpacity>
+                  <Text style={homeScreenStyles.chevron}>{'>'}</Text>
+                </TouchableOpacity>
+              </View>
+              <FlatList
+                data={categoryData}
+                keyExtractor={item => String(item.id)}
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={{ paddingHorizontal: 8 }}
+                renderItem={({ item }) => (
+                  <View style={homeScreenStyles.categoryCard}>
+                    <ContentSection
+                      title=""
+                      data={[item]}
+                      contentType={category.type}
+                      onItemPress={handleContentPress}
+                      hideTitle
+                    />
+                  </View>
+                )}
+              />
+            </View>
           ) : null;
         })}
       </ScrollView>
+
+      {/* Bottom Navigation */}
+      <View style={homeScreenStyles.bottomNav}>
+        <TouchableOpacity style={homeScreenStyles.navItem}>
+          <Text style={homeScreenStyles.navIcon}>🏠</Text>
+          <Text style={homeScreenStyles.navLabel}>Home</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={homeScreenStyles.navItem}>
+          <Text style={homeScreenStyles.navIcon}>🔎</Text>
+          <Text style={homeScreenStyles.navLabel}>Discover</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={homeScreenStyles.navItem}>
+          <Text style={homeScreenStyles.navIcon}>📚</Text>
+          <Text style={homeScreenStyles.navLabel}>Library</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={homeScreenStyles.navItem}>
+          <Text style={homeScreenStyles.navIcon}>👤</Text>
+          <Text style={homeScreenStyles.navLabel}>Profile</Text>
+        </TouchableOpacity>
+      </View>
     </SafeAreaView>
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#121212',
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#121212',
-  },
-  scrollView: {
-    flex: 1,
-  },
-});
+
 
 export default HomeScreen;

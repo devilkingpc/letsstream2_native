@@ -13,7 +13,6 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.letsstream.app",
       "buildNumber": "1",
-      "displayName": "Let's Stream",
       "runtimeVersion": {
         "policy": "appVersion"
       }
@@ -25,7 +24,6 @@
       },
       "package": "com.letsstream.app",
       "versionCode": 1,
-      "displayName": "Let's Stream",
       "runtimeVersion": "1.0.0"
     },
     "plugins": [
