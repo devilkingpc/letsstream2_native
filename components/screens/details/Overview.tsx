@@ -2,32 +2,34 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 
 type OverviewProps = {
-  title: string;
   overview: string;
 };
 
-const Overview: React.FC<OverviewProps> = ({ title, overview }) => (
-  <View style={styles.container}>
-    <Text style={styles.title}>{title}</Text>
-    <Text style={styles.overview}>{overview}</Text>
-  </View>
-);
+const Overview: React.FC<OverviewProps> = ({ overview }) => {
+  if (!overview) return null;
+
+  return (
+    <View style={styles.container}>
+      <Text style={styles.sectionTitle}>Overview</Text>
+      <Text style={styles.overview}>{overview}</Text>
+    </View>
+  );
+};
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: 16,
-    marginBottom: 20,
+    padding: 16,
   },
-  title: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#fff',
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#FFFFFF',
     marginBottom: 8,
   },
   overview: {
-    fontSize: 14,
-    lineHeight: 20,
-    color: '#ddd',
+    fontSize: 15,
+    color: '#CCCCCC',
+    lineHeight: 22,
   },
 });
 

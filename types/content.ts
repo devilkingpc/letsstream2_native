@@ -11,6 +11,15 @@ export type Movie = {
   vote_count?: number;
 };
 
+export type Season = {
+  season_number: number;
+  episode_count: number;
+  name?: string;
+  overview?: string;
+  air_date?: string;
+  poster_path?: string | null;
+};
+
 export type TvShow = {
   id: number;
   name: string;
@@ -23,6 +32,7 @@ export type TvShow = {
   episode_run_time?: number[];
   number_of_seasons?: number;
   vote_count?: number;
+  seasons?: Season[];
 };
 
 export type ContentType = 'movie' | 'tv';
