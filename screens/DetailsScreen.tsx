@@ -7,6 +7,7 @@ import {
   ActivityIndicator,
   StatusBar
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation, useRoute, NavigationProp, RouteProp } from '@react-navigation/native';
 import { RootStackParamList } from '../types/navigation';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -19,7 +20,7 @@ import MoreInfo from '../components/screens/details/MoreInfo';
 import Overview from '../components/screens/details/Overview';
 import { EpisodesList, SeasonControls } from '../components/screens/details/TvShowEpisodes';
 import { Movie, TvShow, ContentType, API_KEY, BASE_URL, IMAGE_BASE_URL, BACKDROP_IMAGE_BASE_URL } from '../types/content';
-import { videoSources } from '../constants/videoSources';
+import { VideoSource, fetchVideoSources } from '../constants/videoSources';
 
 type RouteParams = {
   id: number;
@@ -34,7 +35,8 @@ const formatRuntime = (minutes?: number) => {
   return `${hrs}h ${mins}m`;
 };
 
-const DetailsScreen = () => {  const navigation = useNavigation<NavigationProp<RootStackParamList>>();
+const DetailsScreen = () => {
+  const navigation = useNavigation<NavigationProp<RootStackParamList>>();
   const route = useRoute<RouteProp<RootStackParamList, 'Details'>>();
   const { id, type, content: initialContent } = route.params;
 
@@ -46,28 +48,43 @@ const DetailsScreen = () => {  const navigation = useNavigation<NavigationProp<R
     seasons: { season_number: number, episode_count: number }[],
     episodes: { episode_number: number, name: string, still_path: string, overview: string }[]
   }>({ seasons: [], episodes: [] });
+  const [videoSources, setVideoSources] = useState<VideoSource[]>([]);
+  const [isLoadingSources, setIsLoadingSources] = useState(true);
 
   useEffect(() => {
-    if (!initialContent) {
-      fetchContentDetails();
-    }
+    const loadData = async () => {
+      try {
+        const [sources, contentData] = await Promise.all([
+          fetchVideoSources(),
+          !initialContent ? fetchContentDetails() : Promise.resolve(null)
+        ]);
+        
+        setVideoSources(sources);
+        if (contentData) {
+          setContent(contentData);
+        }
+      } catch (error) {
+        console.error('Error loading data:', error);
+      } finally {
+        setIsLoadingSources(false);
+        setIsLoading(false);
+      }
+    };
+    
+    loadData();
     if (type === 'tv') {
       fetchTvDetails();
     }
   }, [id, type]);
 
   const fetchContentDetails = async () => {
-    try {
-      const response = await fetch(
-        `${BASE_URL}/${type}/${id}?api_key=${API_KEY}&append_to_response=videos,credits`
-      );
-      const data = await response.json();
-      setContent(data);
-      setIsLoading(false);
-    } catch (error) {
-      console.error('Error fetching content details:', error);
-      setIsLoading(false);
+    const response = await fetch(
+      `${BASE_URL}/${type}/${id}?api_key=${API_KEY}&append_to_response=videos,credits`
+    );
+    if (!response.ok) {
+      throw new Error('Failed to fetch content details');
     }
+    return response.json();
   };
 
   const fetchTvDetails = async () => {
@@ -111,26 +128,54 @@ const DetailsScreen = () => {  const navigation = useNavigation<NavigationProp<R
     }
   };
   const handlePlayContent = () => {
+    if (isLoadingSources) {
+      console.warn('Video sources are still loading...');
+      return;
+    }
+
     const defaultSource = videoSources[0];
+    if (!defaultSource) {
+      console.warn('No video sources available');
+      return;
+    }
+
     if (type === 'movie') {
+      const movieUrl = defaultSource.movieUrlPattern
+        ? defaultSource.movieUrlPattern.replace('{id}', id.toString())
+        : '';
+      
+      if (!movieUrl) {
+        console.warn('Invalid movie URL pattern');
+        return;
+      }
+
       navigation.navigate('Player', {
         id,
         type,
-        title: (content as Movie)?.title,
-        sourceUrl: defaultSource.movieUrlPattern.replace('{id}', id.toString()),
+        title: (content as Movie)?.title || 'Untitled',
+        sourceUrl: movieUrl,
         sources: videoSources
       });
     } else {
+      const tvUrl = defaultSource.tvUrlPattern
+        ? defaultSource.tvUrlPattern
+            .replace('{id}', id.toString())
+            .replace('{season}', selectedSeason.toString())
+            .replace('{episode}', selectedEpisode.toString())
+        : '';
+
+      if (!tvUrl) {
+        console.warn('Invalid TV URL pattern');
+        return;
+      }
+
       navigation.navigate('Player', {
         id,
         type,
-        title: (content as TvShow)?.name,
+        title: (content as TvShow)?.name || 'Untitled',
         season: selectedSeason,
         episode: selectedEpisode,
-        sourceUrl: defaultSource.tvUrlPattern
-          .replace('{id}', id.toString())
-          .replace('{season}', selectedSeason.toString())
-          .replace('{episode}', selectedEpisode.toString()),
+        sourceUrl: tvUrl,
         seasonsData: tvDetails.seasons,
         sources: videoSources
       });
@@ -170,7 +215,10 @@ const DetailsScreen = () => {  const navigation = useNavigation<NavigationProp<R
             style={styles.backdropImage}
             resizeMode="cover"
           />
-          <View style={styles.backdropGradient} />
+          <LinearGradient
+            colors={['transparent', '#121212']}
+            style={styles.backdropGradient}
+          />
         </View>
         
         <View style={styles.contentBasics}>
@@ -246,8 +294,6 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     height: '50%',
-    backgroundColor: 'rgba(18, 18, 18, 0)',
-    backgroundImage: 'linear-gradient(to bottom, rgba(18, 18, 18, 0), rgba(18, 18, 18, 1))',
   },
   contentBasics: {
     flexDirection: 'row',

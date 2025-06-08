@@ -53,10 +53,14 @@ const ProfileScreen = () => {
       setShowLoginModal(false);
       Alert.alert("Success", "Signed in successfully!");
       setUserData({
-        ...userData,
+        ...(userData || {}),
         name: 'John Doe',
         email: email,
-        memberSince: '2025'
+        memberSince: '2025',
+        avatarUrl: (userData && userData.avatarUrl) || 'https://api.a0.dev/assets/image?text=User+Profile&aspect=1:1&seed=123',
+        watchlist: (userData && userData.watchlist) || [],
+        downloads: (userData && userData.downloads) || [],
+        preferences: (userData && userData.preferences) || { language: 'English', subtitles: true, quality: 'Auto' }
       });
     } catch (error) {
       Alert.alert("Error", "Failed to sign in. Please try again.");
@@ -78,9 +82,14 @@ const ProfileScreen = () => {
           onPress: () => {
             setIsLoggedIn(false);
             setUserData({
-              ...userData,
+              ...(userData || {}),
               name: 'Guest User',
-              email: 'user@example.com'
+              email: 'user@example.com',
+              avatarUrl: (userData && userData.avatarUrl) || 'https://api.a0.dev/assets/image?text=User+Profile&aspect=1:1&seed=123',
+              memberSince: (userData && userData.memberSince) || '2023',
+              watchlist: (userData && userData.watchlist) || [],
+              downloads: (userData && userData.downloads) || [],
+              preferences: (userData && userData.preferences) || { language: 'English', subtitles: true, quality: 'Auto' }
             });
             Alert.alert("Success", "Signed out successfully!");
           },
