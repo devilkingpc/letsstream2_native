@@ -62,10 +62,9 @@ const HomeScreen = () => {
       content
     });
   };
-
   if (isLoading) {
     return (
-      <View style={styles.loadingContainer}>
+      <View style={homeScreenStyles.loadingContainer}>
         <ActivityIndicator size="large" color="#E50914" />
       </View>
     );

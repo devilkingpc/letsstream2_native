@@ -9,9 +9,10 @@ const ContentSection: React.FC<ContentSectionProps> = ({
   data,
   contentType,
   onItemPress,
+  hideTitle,
 }) => (
   <View style={styles.section}>
-    <Text style={styles.title}>{title}</Text>
+    {!hideTitle && <Text style={styles.title}>{title}</Text>}
     <FlatList
       data={data}
       horizontal

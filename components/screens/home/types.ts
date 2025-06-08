@@ -19,4 +19,5 @@ export type ContentSectionProps = {
   data: ContentItem[];
   contentType: ContentType;
   onItemPress: (content: ContentItem, type: ContentType) => void;
+  hideTitle?: boolean;
 };
